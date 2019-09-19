@@ -110,7 +110,7 @@ func Start(host string, port int) error {
 		addr = strings.Replace(addr, "0.0.0.0", "", 1)
 		host = strings.Replace(host, "0.0.0.0", "127.0.0.1", 1)
 	}
-	fmt.Printf("server start on: %s", fmt.Sprintf("http://%s:%d", host, port))
+	fmt.Printf("server start on: %s\n", fmt.Sprintf("http://%s:%d", host, port))
 
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		return fmt.Errorf("ListenAndServe: : %v", err)
