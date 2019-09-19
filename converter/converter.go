@@ -21,27 +21,29 @@
 package converter
 
 import (
-	"math"
-	"strconv"
-	"strings"
-
 	"github.com/ehlxr/hex-convert/metadata"
+	"strconv"
 )
 
 func ToDecimal(scale int, data string) (int, error) {
-	var new_num float64
-	new_num = 0.0
-	nNum := len(strings.Split(data, "")) - 1
-	for _, value := range strings.Split(data, "") {
-		tmp := float64(findkey(value))
-		if tmp != -1 {
-			new_num = new_num + tmp*math.Pow(float64(scale), float64(nNum))
-			nNum = nNum - 1
-		} else {
-			break
-		}
-	}
-	return int(new_num), nil
+	// var newNum float64
+	// newNum = 0.0
+	// nNum := len(strings.Split(data, "")) - 1
+	// for _, value := range strings.Split(data, "") {
+	// 	tmp := float64(findkey(value))
+	// 	if tmp != -1 {
+	// 		newNum = newNum + tmp*math.Pow(float64(scale), float64(nNum))
+	// 		nNum = nNum - 1
+	// 	} else {
+	// 		break
+	// 	}
+	// }
+	// return int(newNum), nil
+
+	intSize := 32 << uint(^uint(0)>>63)
+	num, err := strconv.ParseInt(data, scale, intSize)
+
+	return int(num), err
 }
 
 func ToBinary(scale int, data string) (string, error) {
@@ -82,19 +84,19 @@ func findkey(in string) int {
 }
 
 func fromDecimal(scale, data int) (string, error) {
-	new_num_str := ""
+	newNumStr := ""
 	var remainder int
-	var remainder_string string
+	var remainderString string
 	for data != 0 {
 		remainder = data % scale
 		if 76 > remainder && remainder > 9 {
-			remainder_string = metadata.TEN_TO_ANY[remainder]
+			remainderString = metadata.TEN_TO_ANY[remainder]
 		} else {
-			remainder_string = strconv.Itoa(remainder)
+			remainderString = strconv.Itoa(remainder)
 		}
-		new_num_str = remainder_string + new_num_str
+		newNumStr = remainderString + newNumStr
 		data = data / scale
 	}
 
-	return new_num_str, nil
+	return newNumStr, nil
 }

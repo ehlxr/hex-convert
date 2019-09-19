@@ -45,7 +45,7 @@ func decimal(w http.ResponseWriter, req *http.Request) {
 	}
 
 	log.Println(result)
-	fmt.Fprintf(w, "<a href='/'>首页</a><br> %s", strconv.Itoa(result))
+	_, _ = fmt.Fprintf(w, "<a href='/'>首页</a><br> %s", strconv.Itoa(result))
 }
 
 func binary(w http.ResponseWriter, req *http.Request) {
@@ -59,7 +59,29 @@ func binary(w http.ResponseWriter, req *http.Request) {
 	}
 
 	log.Println(result)
-	fmt.Fprintf(w, "<a href='/'>首页</a><br> %s", result)
+	_, _ = fmt.Fprintf(w, "<a href='/'>首页</a><br> %s", result)
+}
+
+func submit(w http.ResponseWriter, req *http.Request) {
+	scale, _ := strconv.Atoi(req.FormValue("scale"))
+	data := req.FormValue("data")
+
+	var bd, od, dd, hd string
+	if scale != 2 && scale != 8 && scale != 10 && scale != 16 {
+		bd, od, dd, hd = "", "", "", ""
+	} else {
+		bd, _ = converter.ToBinary(scale, data)
+		d, err := converter.ToDecimal(scale, data)
+		if err == nil {
+			dd = strconv.Itoa(d)
+		}
+
+		od, _ = converter.ToOctal(scale, data)
+		hd, _ = converter.ToHex(scale, data)
+	}
+
+	log.Printf("%s %s %s %s", bd, od, dd, hd)
+	_, _ = fmt.Fprintf(w, "<a href='/'>首页</a><br>二进制：%s 八进制：%s 十进制：%s 十六进制：%s", bd, od, dd, hd)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -74,13 +96,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	fmt.Fprintf(w, string(fd))
+	_, _ = fmt.Fprintf(w, string(fd))
 }
 
 func Start(host string, port int) error {
 	http.HandleFunc("/", index)
 	http.HandleFunc("/d", decimal)
 	http.HandleFunc("/b", binary)
+	http.HandleFunc("/s", submit)
 
 	addr := fmt.Sprintf("%s:%d", host, port)
 	if strings.Contains(addr, "0.0.0.0") {
