@@ -8,8 +8,8 @@ VERSION_PATH	   	:= $(shell cat `go env GOMOD` | awk '/^module/{print $$2}')/met
 LD_GIT_COMMIT      	:= -X '$(VERSION_PATH).GitCommit=$(COMMIT_SHA1)'
 LD_BUILD_TIME      	:= -X '$(VERSION_PATH).BuildTime=$(BUILD_TIME)'
 LD_GO_VERSION      	:= -X '$(VERSION_PATH).GoVersion=`go version`'
-LD_GATEWAY_VERSION	:= -X '$(VERSION_PATH).Version=$(BUILD_VERSION)'
-LD_FLAGS           	:= "$(LD_GIT_COMMIT) $(LD_BUILD_TIME) $(LD_GO_VERSION) $(LD_GATEWAY_VERSION) -w -s"
+LD_VERSION	:= -X '$(VERSION_PATH).Version=$(BUILD_VERSION)'
+LD_FLAGS           	:= "$(LD_GIT_COMMIT) $(LD_BUILD_TIME) $(LD_GO_VERSION) $(LD_VERSION) -w -s"
 
 .PHONY : build release clean install upx
 
