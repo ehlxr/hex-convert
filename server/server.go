@@ -1,119 +1,48 @@
-// Copyright © 2018 ehlxr <ehlxr.me@gmail.com>
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+BUILD_VERSION   := $(shell cat version)
+BUILD_TIME		:= $(shell date "+%F %T")
+COMMIT_SHA1     := $(shell git rev-parse HEAD)
+ROOT_DIR    	:= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))/
+DIST_DIR 		:= $(ROOT_DIR)/dist/
 
-package server
+VERSION_PATH	   	:= $(shell cat `go env GOMOD` | awk '/^module/{print $$2}')/cmd
+LD_GIT_COMMIT      	:= -X '$(VERSION_PATH).GitCommit=$(COMMIT_SHA1)'
+LD_BUILD_TIME      	:= -X '$(VERSION_PATH).BuildTime=$(BUILD_TIME)'
+LD_GO_VERSION      	:= -X '$(VERSION_PATH).GoVersion=`go version`'
+LD_GATEWAY_VERSION	:= -X '$(VERSION_PATH).Version=$(BUILD_VERSION)'
+LD_FLAGS           	:= "$(LD_GIT_COMMIT) $(LD_BUILD_TIME) $(LD_GO_VERSION) $(LD_GATEWAY_VERSION) -w -s"
 
-import (
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
+.PHONY : build release clean install upx
 
-	"github.com/ehlxr/hex-convert/gen"
+build:
+ifneq ($(shell type gox >/dev/null 2>&1;echo $$?), 0)
+	@echo "Can't find gox command, will start installation..."
+	GO111MODULE=off go get -v -u github.com/mitchellh/gox
+endif
+	# @$(if $(findstring 0,$(shell type gox >/dev/null 2>&1;echo $$?)),,echo "Can't find gox command, will start installation...";GO111MODULE=off go get -v -u github.com/mitchellh/gox)
+	gox -ldflags $(LD_FLAGS) -osarch="darwin/amd64 linux/386 linux/amd64 windows/amd64" \
+		-output="$(DIST_DIR){{.Dir}}_{{.OS}}_{{.Arch}}"
 
-	"github.com/ehlxr/hex-convert/converter"
-)
+clean:
+	rm -rf $(DIST_DIR)*
 
-func decimal(w http.ResponseWriter, req *http.Request) {
-	scale, _ := strconv.Atoi(req.FormValue("scale"))
-	data := req.FormValue("data")
+install:
+	go install -ldflags $(LD_FLAGS)
 
-	result, err := converter.ToDecimal(scale, data)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+# 压缩。需要安装 https://github.com/upx/upx
+upx:
+	upx $(DIST_DIR)**
 
-	log.Println(result)
-	_, _ = fmt.Fprintf(w, "<a href='/'>首页</a><br> %s", strconv.Itoa(result))
-}
+release: build upx
+ifneq ($(shell type ghr >/dev/null 2>&1;echo $$?), 0)
+	@echo "Can't find ghr command, will start installation..."
+	GO111MODULE=off go get -v -u github.com/tcnksm/ghr
+endif
+	# @$(if $(findstring 0,$(shell type ghr >/dev/null 2>&1;echo $$?)),,echo "Can't find ghr command, will start installation...";GO111MODULE=off go get -v -u github.com/tcnksm/ghr)
+	ghr -u ehlxr -t $(GITHUB_RELEASE_TOKEN) -replace -delete --debug ${BUILD_VERSION} $(DIST_DIR)
 
-func binary(w http.ResponseWriter, req *http.Request) {
-	scale, _ := strconv.Atoi(req.FormValue("scale"))
-	data := req.FormValue("data")
+# this tells 'make' to export all variables to child processes by default.
+.EXPORT_ALL_VARIABLES:
 
-	result, err := converter.ToBinary(scale, data)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	log.Println(result)
-	_, _ = fmt.Fprintf(w, "<a href='/'>首页</a><br> %s", result)
-}
-
-func submit(w http.ResponseWriter, req *http.Request) {
-	scale, _ := strconv.Atoi(req.FormValue("scale"))
-	data := req.FormValue("data")
-
-	var bd, od, dd, hd string
-	if scale != 2 && scale != 8 && scale != 10 && scale != 16 {
-		bd, od, dd, hd = "", "", "", ""
-	} else {
-		bd, _ = converter.ToBinary(scale, data)
-		d, err := converter.ToDecimal(scale, data)
-		if err == nil {
-			dd = strconv.Itoa(d)
-		}
-
-		od, _ = converter.ToOctal(scale, data)
-		hd, _ = converter.ToHex(scale, data)
-	}
-
-	log.Printf("%s %s %s %s", bd, od, dd, hd)
-	_, _ = fmt.Fprintf(w, "<a href='/'>首页</a><br>二进制：%s 八进制：%s 十进制：%s 十六进制：%s", bd, od, dd, hd)
-}
-
-func index(w http.ResponseWriter, r *http.Request) {
-	f, err := gen.Assets.Open("/index.tpl")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer f.Close()
-
-	fd, err := ioutil.ReadAll(f)
-	if err != nil {
-		panic(err)
-	}
-
-	_, _ = fmt.Fprintf(w, string(fd))
-}
-
-func Start(host string, port int) error {
-	http.HandleFunc("/", index)
-	http.HandleFunc("/d", decimal)
-	http.HandleFunc("/b", binary)
-	http.HandleFunc("/s", submit)
-
-	addr := fmt.Sprintf("%s:%d", host, port)
-	if strings.Contains(addr, "0.0.0.0") {
-		addr = strings.Replace(addr, "0.0.0.0", "", 1)
-		host = strings.Replace(host, "0.0.0.0", "127.0.0.1", 1)
-	}
-	fmt.Printf("server start on: %s\n", fmt.Sprintf("http://%s:%d", host, port))
-
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		return fmt.Errorf("ListenAndServe: : %v", err)
-	}
-	return nil
-}
+GO111MODULE = on
+GOPROXY = https://goproxy.cn,direct
+GOSUMDB = sum.golang.google.cn

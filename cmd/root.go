@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ehlxr/hex-convert/metadata"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,10 +32,10 @@ import (
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:     "hc",
-	Short:   "进制转换",
-	Long:    `支持 76 位以内的任意进制相互转换`,
-	Version: metadata.VERSION,
+	Use:   "hc",
+	Short: "进制转换",
+	Long:  `支持 76 位以内的任意进制相互转换`,
+	// Version: metadata.VERSION,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -51,7 +50,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.Flags().BoolP("version", "v", false, "show version of the hc.")
+	// rootCmd.Flags().BoolP("version", "v", false, "show version of the hc.")
 	rootCmd.PersistentFlags().IntP("scale", "s", 0, "要转换的进制")
 	rootCmd.PersistentFlags().StringP("data", "d", "", "要转换数值")
 }
