@@ -45,7 +45,7 @@ var versionCmd = &cobra.Command{
 	Long: `
 Print version of jwt`,
 	Run: func(cmd *cobra.Command, args []string) {
-		banner, _ := base64.StdEncoding.DecodeString(bannerBase64)
+		banner, _ := base64.StdEncoding.DecodeString(metadata.BannerBase64)
 		fmt.Printf(versionTpl, banner, metadata.Version, metadata.BuildTime, metadata.GitCommit, metadata.GoVersion)
 	},
 }
