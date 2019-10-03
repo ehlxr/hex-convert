@@ -30,12 +30,12 @@ import (
 )
 
 var versionTpl = `%s
-
 Name: hc
 Version: %s
 BuildTime: %s
 GitCommit: %s
 GoVersion: %s
+
 `
 
 // versionCmd represents the version command
@@ -45,9 +45,13 @@ var versionCmd = &cobra.Command{
 	Long: `
 Print version of jwt`,
 	Run: func(cmd *cobra.Command, args []string) {
-		banner, _ := base64.StdEncoding.DecodeString(metadata.BannerBase64)
-		fmt.Printf(versionTpl, banner, metadata.Version, metadata.BuildTime, metadata.GitCommit, metadata.GoVersion)
+		printVersion()
 	},
+}
+
+func printVersion() {
+	banner, _ := base64.StdEncoding.DecodeString(metadata.BannerBase64)
+	fmt.Printf(versionTpl, banner, metadata.Version, metadata.BuildTime, metadata.GitCommit, metadata.GoVersion)
 }
 
 func init() {

@@ -40,6 +40,8 @@ var serverCmd = &cobra.Command{
 		host := cmd.LocalFlags().Lookup("host").Value.String()
 		port, _ := strconv.Atoi(cmd.LocalFlags().Lookup("port").Value.String())
 
+		printVersion()
+
 		if err := server.Start(host, port); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
