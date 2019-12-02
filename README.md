@@ -1,5 +1,11 @@
 # hex-convert
 
+[![license](https://badgen.net/badge/license/MIT/blue)](./LICENSE)
+[![](https://badgen.net/github/commits/ehlxr/hex-convert)](https://github.com/ehlxr/hex-convert/commits/)
+[![](https://badgen.net/github/last-commit/ehlxr/hex-convert)]((https://github.com/ehlxr/hex-convert/commits/))
+[![](https://badgen.net/github/releases/ehlxr/hex-convert)](https://github.com/ehlxr/hex-convert/releases)
+
+
 ```shell
 支持 76 位以内的任意进制相互转换
 
